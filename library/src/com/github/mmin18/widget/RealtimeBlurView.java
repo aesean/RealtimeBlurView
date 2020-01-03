@@ -45,6 +45,7 @@ public class RealtimeBlurView extends View {
 	private boolean mDifferentRoot;
 	private static int RENDERING_COUNT;
 	private static int BLUR_IMPL;
+	private boolean mDownsampleFactorOptimization;
 
 	public RealtimeBlurView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -56,6 +57,7 @@ public class RealtimeBlurView extends View {
 				TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, context.getResources().getDisplayMetrics()));
 		mDownsampleFactor = a.getFloat(R.styleable.RealtimeBlurView_realtimeDownsampleFactor, 4);
 		mOverlayColor = a.getColor(R.styleable.RealtimeBlurView_realtimeOverlayColor, 0xAAFFFFFF);
+		mDownsampleFactorOptimization = a.getBoolean(R.styleable.RealtimeBlurView_downsampleFactorOptimization, true);
 		a.recycle();
 
 		mPaint = new Paint();
@@ -175,8 +177,13 @@ public class RealtimeBlurView extends View {
 		float downsampleFactor = mDownsampleFactor;
 		float radius = mBlurRadius / downsampleFactor;
 		if (radius > 25) {
-			downsampleFactor = downsampleFactor * radius / 25;
-			radius = 25;
+			if (mDownsampleFactorOptimization) {
+				downsampleFactor = (int) (radius / 25) + 1;
+				radius = radius / downsampleFactor;
+			} else {
+				downsampleFactor = downsampleFactor * radius / 25;
+				radius = 25;
+			}
 		}
 
 		final int width = getWidth();
